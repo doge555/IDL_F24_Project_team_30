@@ -6,21 +6,21 @@ Robot Hand Manipulation Project
 Implementation of PPO (Proximal Policy Optimization) and RSAC (Recurrent Soft Actor-Critic) algorithms for robotic hand manipulation tasks using the Gymnasium Robotics environment.
 
 ### Project Structure
-├── RobotHand_Baseline.ipynb   # PPO implementation
+    ├── RobotHand_Baseline.ipynb   # PPO implementation
 
-├── RobotHand_RSAC.ipynb       # RSAC implementation
+    ├── RobotHand_RSAC.ipynb       # RSAC implementation
 
-├── Shadow_Hand_Example.ipynb   # Basic example using Shadow Hand
+    ├── Shadow_Hand_Example.ipynb   # Basic example using Shadow Hand
 
-├── components/                 # Initial component implementations
+    ├── components/                 # Initial component implementations
 
-    ├── GAE.py
+            ├── GAE.py
 
-    ├── model.py
+            ├── model.py
 
-    ├── ppo_agent.py
+            ├── ppo_agent.py
 
-    └── PPO_Loss.py
+            └── PPO_Loss.py
 
 ### Requirements
 gymnasium

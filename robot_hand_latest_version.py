@@ -218,8 +218,6 @@ class PPOAgent:
 
             # policy loss caculation START
             ratio = torch.sum(curr_action_prob / old_action_prob, dim=-1)
-            print(ratio.shape)
-            print(memo_advantages_tensor.squeeze(-1).shape)
             surr1 = ratio * memo_advantages_tensor.squeeze(-1)
             surr2 = torch.clamp(ratio, 1 - self.EPSILON_CLIP, 1 + self.EPSILON_CLIP) * memo_advantages_tensor.squeeze(-1)
             actor_loss = -torch.min(surr1, surr2).mean()

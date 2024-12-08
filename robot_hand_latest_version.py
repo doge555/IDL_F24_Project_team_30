@@ -225,7 +225,7 @@ class PPOAgent:
 
             # value loss caculation START
             batch_returns = memo_advantages_tensor + memo_values_tensor
-            batch_old_values = self.critic(memo_value_observations_tensor)
+            batch_old_values, _ = self.critic(memo_value_observations_tensor)
             critic_loss = nn.MSELoss()(batch_old_values, batch_returns)
             # value loss caculation END
 
@@ -374,18 +374,17 @@ def train():
     for episode in range(NUM_EPISODES):
         obs_dict, _ = envs.reset()
         done = False
-        episode_reward = np.zeros((6, 1))
+        episode_reward = np.zeros(6,)
         reward_buffer = np.zeros((6, 1))
         for step_i in range(NUM_STEP):
             policy_obs = policy_input_converter(obs_dict)
             value_obs = value_input_converter(obs_dict)
             action, value = agent.get_action(policy_obs, value_obs)
             next_obs_dict, reward, done, _, _ = envs.step(action)
-            reward = reward.reshape(-1, 1)
             episode_reward += reward
             done = True if step_i == NUM_STEP - 1 else False
-            agent.replay_buffer.add_memo(policy_obs, value_obs, action, (reward - reward_buffer[:, -1]), value, done)
-            reward_buffer = np.concatenate((reward_buffer, reward), axis=1)
+            agent.replay_buffer.add_memo(policy_obs, value_obs, action, (reward - reward_buffer[:, -1]).reshape(-1, 1), value, done)
+            reward_buffer = np.concatenate((reward_buffer, reward.reshape(-1, 1)), axis=1)
             obs_dict = next_obs_dict
 
         agent.update()

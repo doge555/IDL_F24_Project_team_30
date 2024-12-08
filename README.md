@@ -14,13 +14,13 @@ Implementation of PPO (Proximal Policy Optimization) and RSAC (Recurrent Soft Ac
 
 ├── components/                 # Initial component implementations
 
-├── GAE.py
+    ├── GAE.py
 
-├── model.py
+    ├── model.py
 
-├── ppo_agent.py
+    ├── ppo_agent.py
 
-└── PPO_Loss.py
+    └── PPO_Loss.py
 
 ### Requirements
 gymnasium

@@ -32,7 +32,7 @@ numpy
 matplotlib
 seaborn
 pandas
-Copy
+
 ### Features
 - LSTM-based actor-critic architectures for temporal dependency modeling
 - Experience replay buffer for sample efficiency  
@@ -59,12 +59,14 @@ Copy
 #### 1. Install dependencies:
 ```bash
 pip install gymnasium gymnasium-robotics mujoco tensorboardX
-2. Run training:
+```
+
+#### 2. Run training:
 
 For PPO: Execute RobotHand_Baseline.ipynb
 For RSAC: Execute RobotHand_RSAC.ipynb
 
-3. Monitor training:
+#### 3. Monitor training:
 
 TensorBoard logs are saved in ppo_logs/ or rsac_baselogs/
 Training curves and correlation matrices are auto-generated

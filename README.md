@@ -7,14 +7,21 @@ Implementation of PPO (Proximal Policy Optimization) and RSAC (Recurrent Soft Ac
 
 ### Project Structure
 ├── RobotHand_Baseline.ipynb   # PPO implementation
+
 ├── RobotHand_RSAC.ipynb       # RSAC implementation
+
 ├── Shadow_Hand_Example.ipynb   # Basic example using Shadow Hand
+
 ├── components/                 # Initial component implementations
+
 ├── GAE.py
+
 ├── model.py
+
 ├── ppo_agent.py
+
 └── PPO_Loss.py
-Copy
+
 ### Requirements
 gymnasium
 gymnasium-robotics

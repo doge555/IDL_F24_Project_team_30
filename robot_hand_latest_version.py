@@ -134,13 +134,15 @@ class ReplayMemory:
 
 class PPOAgent:
     def __init__(self, policy_dim, value_dim, batch_size):
+        
+        self.CRITIC_LOSS_WEIGHT = 0.5
 
         self.LR_ACTOR = 3e-4
         self.LR_CRITIC = 3e-4
 
         self.GAMMA = 0.99
         self.LAMBDA = 0.95
-        self.EPOCH = 10
+        self.EPOCH = 30
         self.EPSILON_CLIP = 0.2
 
         self.actor = Actor(policy_dim, fc_hidden_dim=1024, lstm_hidden_dim=512, output_dim=(20, 11)).to(device)
@@ -229,13 +231,17 @@ class PPOAgent:
             critic_loss = nn.MSELoss()(batch_old_values, batch_returns)
             # value loss caculation END
 
+            # total loss START
+            total_loss = actor_loss + self.CRITIC_LOSS_WEIGHT*critic_loss
+            # total loss END
+
             # back proporgation through actor and critic networks START
             self.actor_optimizer.zero_grad()
-            actor_loss.backward()
+            total_loss.backward()
             self.actor_optimizer.step()
 
             self.critic_optimizer.zero_grad()
-            critic_loss.backward()
+            total_loss.backward()
             self.critic_optimizer.step()
             # back proporgation through actor and critic networks END
 
@@ -362,7 +368,7 @@ def train():
     # env = gym.make('HandManipulateBlockDense-v1', max_episode_steps=100)
     envs = gym.vector.SyncVectorEnv([make_env("HandManipulateBlockDense-v1") for _ in range(6)])
     BATCH_SIZE = 60
-    NUM_EPISODES = 3
+    NUM_EPISODES = 60
     NUM_STEP = 2*BATCH_SIZE
     best_average_reward = -100
 
@@ -391,7 +397,7 @@ def train():
         
         if np.mean(episode_reward/NUM_STEP) > best_average_reward:
             best_average_reward = np.mean(episode_reward/NUM_STEP)
-            model_path = os.path.join(model_dir, f'ppo_actor_best_{episode}.pth')
+            model_path = os.path.join(model_dir, f'ppo_actor_best.pth')
             agent.save_policy(model_path)
             print(f"Best reward: {best_average_reward}!")
 

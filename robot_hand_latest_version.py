@@ -235,11 +235,9 @@ class PPOAgent:
 
             # back proporgation through actor and critic networks START
             self.actor_optimizer.zero_grad()
-            total_loss.backward()
-            self.actor_optimizer.step()
-
             self.critic_optimizer.zero_grad()
             total_loss.backward()
+            self.actor_optimizer.step()
             self.critic_optimizer.step()
             # back proporgation through actor and critic networks END
 

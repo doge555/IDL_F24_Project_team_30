@@ -24,6 +24,7 @@ Implementation of PPO (Proximal Policy Optimization) and RSAC (Recurrent Soft Ac
 
 ### Requirements
 gymnasium
+gym
 gymnasium-robotics
 mujoco
 tensorboardX

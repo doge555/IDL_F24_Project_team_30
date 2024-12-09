@@ -23,6 +23,7 @@ Implementation of PPO (Proximal Policy Optimization) and RSAC (Recurrent Soft Ac
             └── PPO_Loss.py
 
 ### Requirements
+Python version: 3.10
 gymnasium
 gym
 gymnasium-robotics

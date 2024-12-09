@@ -6,7 +6,7 @@ Robot Hand Manipulation Project
 Implementation of PPO (Proximal Policy Optimization) and RSAC (Recurrent Soft Actor-Critic) algorithms for robotic hand manipulation tasks using the Gymnasium Robotics environment.
 
 ### Project Structure
-    ├── RobotHand_Baseline.ipynb   # PPO implementation
+    ├── RobotHand_Baseline.py   # PPO implementation
 
     ├── RobotHand_RSAC.ipynb       # RSAC implementation
 

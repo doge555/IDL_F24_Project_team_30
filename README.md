@@ -57,7 +57,7 @@ tensorboard
 
 ### Training
 
-#### PPO (RobotHand_Baseline.ipynb)
+#### PPO (RobotHand_Baseline.py)
 - Implements discretized action space
 - Uses GAE (Generalized Advantage Estimation)
 - Features clipped objective function and entropy regularization
@@ -73,12 +73,12 @@ tensorboard
 
 #### 1. Install dependencies:
 ```bash
-pip install gymnasium gymnasium-robotics mujoco tensorboardX
+sh setup.sh
 ```
 
 #### 2. Run training:
 
-For PPO: Execute RobotHand_Baseline.ipynb
+For PPO: Execute RobotHand_Baseline.py
 For RSAC: Execute RobotHand_RSAC.ipynb
 
 #### 3. Monitor training:

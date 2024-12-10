@@ -375,45 +375,49 @@ def plot_training_curves(log_dir, timestamp, num_env):
 
         plt.close()
 
-        # Create correlation plot only if we have enough aligned data
-        main_metrics = ['eval_success_rate', 'eval_max_consecutive_successes']
+        # Create correlation plot for each environment separately
+        global_metrics = ['eval_success_rate', 'eval_max_consecutive_successes']
+
         for env in range(num_env):
-            main_metrics.append(f"Episode_reward_env_{env}")
-        aligned_data = {}
+            main_metrics = global_metrics + [f"Episode_reward_env_{env}"]
+            aligned_data = {}
 
-        # Find common steps across all metrics
-        common_steps = None
-        for metric in main_metrics:
-            if metric in metrics_data:
-                steps = set(metrics_data[metric]['steps'])
-                if common_steps is None:
-                    common_steps = steps
-                else:
-                    common_steps = common_steps.intersection(steps)
-
-        if common_steps and len(common_steps) > 1:
-            common_steps = sorted(list(common_steps))
-
-            # Create aligned data
+            # Find common steps across metrics for the current environment
+            common_steps = None
             for metric in main_metrics:
                 if metric in metrics_data:
-                    steps = metrics_data[metric]['steps']
-                    values = metrics_data[metric]['values']
-                    step_to_value = dict(zip(steps, values))
-                    aligned_data[metric] = [step_to_value[step] for step in common_steps]
+                    steps = set(metrics_data[metric]['steps'])
+                    if common_steps is None:
+                        common_steps = steps
+                    else:
+                        common_steps = common_steps.intersection(steps)
 
-            if len(aligned_data) > 1:
-                plt.figure(figsize=(12, 8))
-                df = pd.DataFrame(aligned_data, index=common_steps)
-                sns.heatmap(df.corr(), annot=True, cmap='coolwarm', center=0,
-                           vmin=-1, vmax=1, square=True)
-                plt.title('Metrics Correlation Matrix', pad=20)
+            # Only create the correlation matrix if we have enough data
+            if common_steps and len(common_steps) > 1:
+                common_steps = sorted(list(common_steps))
 
-                corr_path = os.path.join(log_dir, f'correlation_matrix_{timestamp}.png')
-                plt.savefig(corr_path, dpi=300, bbox_inches='tight')
-                print(f"Correlation matrix saved to: {corr_path}")
+                # Create aligned data for the current environment
+                for metric in main_metrics:
+                    if metric in metrics_data:
+                        steps = metrics_data[metric]['steps']
+                        values = metrics_data[metric]['values']
+                        step_to_value = dict(zip(steps, values))
+                        aligned_data[metric] = [step_to_value[step] for step in common_steps]
 
-                plt.close()
+                if len(aligned_data) > 1:
+                    # Create the correlation matrix heatmap for the current environment
+                    plt.figure(figsize=(12, 8))
+                    df = pd.DataFrame(aligned_data, index=common_steps)
+                    sns.heatmap(df.corr(), annot=True, cmap='coolwarm', center=0,
+                                vmin=-1, vmax=1, square=True)
+                    plt.title(f'Metrics Correlation Matrix for Environment {env}', pad=20)
+
+                    # Save the heatmap for the current environment
+                    corr_path = os.path.join(log_dir, f'correlation_matrix_env_{env}_{timestamp}.png')
+                    plt.savefig(corr_path, dpi=300, bbox_inches='tight')
+                    print(f"Correlation matrix for Environment {env} saved to: {corr_path}")
+                    
+                    plt.close()
 
     except Exception as e:
         print(f"Error while plotting training curves: {str(e)}")
@@ -558,12 +562,13 @@ def evaluate_policy(env, agent, num_episodes=5, num_steps=200, num_env=1):
 
 def train():
     BATCH_SIZE = 60
-    NUM_EPISODES = 6
+    NUM_EPISODES = 60
+    NUM_EVL_EPISODES = 10
     EVAL_INTERVAL = 30
     NUM_STEP = 2*BATCH_SIZE
     NUM_ENV = 6
     NUM_EVAL_ENV = 1
-    EVAL_STEP = 200
+    EVAL_STEP = 100
     
     best_average_reward = np.ones(NUM_ENV,)*-100
     best_consecutive_successes = 0
@@ -612,7 +617,7 @@ def train():
                 print(f"Best reward for env({env}) saved: {best_average_reward[env]}!")
 
         if episode % EVAL_INTERVAL == 0:
-                eval_metrics = evaluate_policy(env_eval, agent, num_episodes=NUM_EPISODES, num_steps=EVAL_STEP, num_env=NUM_EVAL_ENV)
+                eval_metrics = evaluate_policy(env_eval, agent, num_episodes=NUM_EVL_EPISODES, num_steps=EVAL_STEP, num_env=NUM_EVAL_ENV)
                 for metric_name, value in eval_metrics.items():
                     writer.add_scalar(f"eval_{metric_name}", value, episode)
                 print(f"\nEvaluation at episode {episode}:")
@@ -626,7 +631,7 @@ def train():
                     agent.save_policy(model_path)
                     print(f"New best consecutive successes: {best_consecutive_successes}!")
 
-        if best_consecutive_successes >= 50:  # Adjustable threshold
+        if best_consecutive_successes >= 5:  # Adjustable threshold
                 print("\nReached target consecutive successes! Training complete.")
                 break
         

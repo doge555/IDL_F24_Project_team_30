@@ -45,6 +45,8 @@ seaborn
 
 pandas
 
+tensorboard
+
 ### Features
 - LSTM-based actor-critic architectures for temporal dependency modeling
 - Experience replay buffer for sample efficiency  

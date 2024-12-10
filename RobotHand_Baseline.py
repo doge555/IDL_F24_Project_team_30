@@ -171,14 +171,106 @@ class PPOAgent:
         value, self.value_hidden_state = self.critic.forward(value_obs, self.value_hidden_state)
         return action.detach().cpu().numpy()[:, 0, :], value.detach().cpu().numpy()[:, 0, :]
 
+    # def update(self, writer, episode):
+    #     average_actor_loss = 0
+    #     average_critic_loss = 0
+    #     self.old_actor.load_state_dict(self.actor.state_dict())
+    #     self.actor.train()
+    #     self.critic.train()
+    #     for epoch_i in range(self.EPOCH): 
+    #         memo_policy_observations, memo_value_observations, memo_actions, memo_rewards, memo_values, memo_dones, sequences = self.replay_buffer.sample()
+    #         # GAE caculation START
+    #         T = len(memo_rewards)  # T sequences
+            
+    #         # memo_advantage in shape (sequences_size, batch_size, 1)
+    #         memo_advantage = np.zeros_like(memo_rewards, dtype=np.float32)
+
+    #         for t in range(T):
+    #             discount = 1
+    #             a_t = 0
+    #             for k in range(t, T - 1):
+    #                 a_t += discount * (
+    #                         memo_rewards[k] + self.GAMMA * memo_values[k + 1] * (1 - int(memo_dones[k])) -
+    #                         memo_values[k])
+    #                 discount *= self.GAMMA * self.LAMBDA
+    #             memo_advantage[t] = a_t
+    #         # GAE caculation END
+
+    #         with torch.no_grad():
+    #             # memo_advantages_tensor in shape (batch_size, sequences_size, 1)
+    #             memo_advantages_tensor = (torch.tensor(memo_advantage)).transpose(0, 1).to(device)
+    #             memo_advantages_tensor = torch.cat([memo_advantages_tensor[:, chunk_of_seq, :] for chunk_of_seq in sequences], dim=1)
+
+    #             #memo_values_tensor in shape (batch_size, sequences_size, 1)
+    #             memo_values_tensor = (torch.tensor(memo_values)).transpose(0, 1).to(device)
+    #             memo_values_tensor = torch.cat([memo_values_tensor[:, chunk_of_seq, :] for chunk_of_seq in sequences], dim=1)
+
+    #         # memo_policy_observations_tensor in shape (batch_size, sequences_size, policy_dim)
+    #         memo_policy_observations_tensor = (torch.FloatTensor(memo_policy_observations)).transpose(0, 1).to(device)
+    #         memo_policy_observations_tensor = torch.cat([memo_policy_observations_tensor[:, chunk_of_seq, :] for chunk_of_seq in sequences], dim=1)
+
+    #         # memo_value_observations_tensor in shape (batch_size, sequences_size, value_dim)
+    #         memo_value_observations_tensor = (torch.FloatTensor(memo_value_observations)).transpose(0, 1).to(device)
+    #         memo_value_observations_tensor = torch.cat([memo_value_observations_tensor[:, chunk_of_seq, :] for chunk_of_seq in sequences], dim=1)
+
+    #         # memo_actions_tensor in shape (batch_size, sequences_size, 20)
+    #         memo_actions_tensor = (torch.FloatTensor(memo_actions)).transpose(0, 1).to(device)
+    #         memo_actions_tensor = torch.cat([memo_actions_tensor[:, chunk_of_seq, :] for chunk_of_seq in sequences], dim=1)
+
+    #         # action probability according to old policy and action probability according to current policy caculation START
+    #         with torch.no_grad():
+    #             old_action_dist, _ = self.old_actor(memo_policy_observations_tensor)
+    #         curr_action_dist, _ = self.actor(memo_policy_observations_tensor)
+
+    #         old_action_prob = torch.gather(old_action_dist, -1, (torch.bucketize(memo_actions_tensor, self.action_tensor, right=True)-1).unsqueeze(-1)).squeeze(-1)
+    #         curr_action_prob = torch.gather(curr_action_dist, -1, (torch.bucketize(memo_actions_tensor, self.action_tensor, right=True)-1).unsqueeze(-1)).squeeze(-1)
+    #         # action probability according to old policy and action probability according to current policy caculation END
+
+    #         # policy loss caculation START
+    #         ratio = torch.sum(curr_action_prob / old_action_prob, dim=-1)
+    #         surr1 = ratio * memo_advantages_tensor.squeeze(-1)
+    #         surr2 = torch.clamp(ratio, 1 - self.EPSILON_CLIP, 1 + self.EPSILON_CLIP) * memo_advantages_tensor.squeeze(-1)
+    #         actor_loss = -torch.min(surr1, surr2).mean()
+    #         #  policy loss caculation END
+
+    #         # value loss caculation START
+    #         batch_returns = memo_advantages_tensor + memo_values_tensor
+    #         batch_old_values, _ = self.critic(memo_value_observations_tensor)
+    #         critic_loss = nn.MSELoss()(batch_old_values, batch_returns)
+    #         # value loss caculation END
+
+    #         # total loss START
+    #         total_loss = actor_loss + self.CRITIC_LOSS_WEIGHT*critic_loss
+    #         # total loss END
+
+    #         # back proporgation through actor and critic networks START
+    #         self.actor_optimizer.zero_grad()
+    #         self.critic_optimizer.zero_grad()
+    #         total_loss.backward()
+    #         self.actor_optimizer.step()
+    #         self.critic_optimizer.step()
+    #         # back proporgation through actor and critic networks END
+
+    #         average_actor_loss += actor_loss
+    #         average_critic_loss += critic_loss
+
+    #     writer.add_scalar(f"actor_loss", average_actor_loss/self.EPOCH, episode)
+    #     writer.add_scalar(f"critic_loss", average_critic_loss/self.EPOCH, episode)
+    #     # refresh the memory buffer 
+    #     self.replay_buffer.clear_memo()
+    #     self.policy_hidden_state = None
+    #     self.value_hidden_state = None
+
     def update(self, writer, episode):
         average_actor_loss = 0
         average_critic_loss = 0
         self.old_actor.load_state_dict(self.actor.state_dict())
         self.actor.train()
         self.critic.train()
+        
         for epoch_i in range(self.EPOCH): 
             memo_policy_observations, memo_value_observations, memo_actions, memo_rewards, memo_values, memo_dones, sequences = self.replay_buffer.sample()
+
             # GAE caculation START
             T = len(memo_rewards)  # T sequences
             
@@ -216,47 +308,45 @@ class PPOAgent:
             # memo_actions_tensor in shape (batch_size, sequences_size, 20)
             memo_actions_tensor = (torch.FloatTensor(memo_actions)).transpose(0, 1).to(device)
             memo_actions_tensor = torch.cat([memo_actions_tensor[:, chunk_of_seq, :] for chunk_of_seq in sequences], dim=1)
-
-            # action probability according to old policy and action probability according to current policy caculation START
+            
+            # action_prob according to old and new policy
             with torch.no_grad():
                 old_action_dist, _ = self.old_actor(memo_policy_observations_tensor)
             curr_action_dist, _ = self.actor(memo_policy_observations_tensor)
 
             old_action_prob = torch.gather(old_action_dist, -1, (torch.bucketize(memo_actions_tensor, self.action_tensor, right=True)-1).unsqueeze(-1)).squeeze(-1)
             curr_action_prob = torch.gather(curr_action_dist, -1, (torch.bucketize(memo_actions_tensor, self.action_tensor, right=True)-1).unsqueeze(-1)).squeeze(-1)
-            # action probability according to old policy and action probability according to current policy caculation END
 
-            # policy loss caculation START
-            ratio = torch.sum(curr_action_prob / old_action_prob, dim=-1)
-            surr1 = ratio * memo_advantages_tensor.squeeze(-1)
-            surr2 = torch.clamp(ratio, 1 - self.EPSILON_CLIP, 1 + self.EPSILON_CLIP) * memo_advantages_tensor.squeeze(-1)
+            ratio = curr_action_prob / old_action_prob
+
+            # caculating PPO loss
+            surr1 = ratio * memo_advantages_tensor
+            surr2 = torch.clamp(ratio, 1 - self.EPSILON_CLIP, 1 + self.EPSILON_CLIP) * memo_advantages_tensor
             actor_loss = -torch.min(surr1, surr2).mean()
-            #  policy loss caculation END
 
-            # value loss caculation START
-            batch_returns = memo_advantages_tensor + memo_values_tensor
+            # caculating Critic loss
+            batch_returns = memo_advantages_tensor + (torch.tensor(memo_rewards).transpose(0, 1).float()).to(device)
             batch_old_values, _ = self.critic(memo_value_observations_tensor)
             critic_loss = nn.MSELoss()(batch_old_values, batch_returns)
-            # value loss caculation END
 
-            # total loss START
-            total_loss = actor_loss + self.CRITIC_LOSS_WEIGHT*critic_loss
-            # total loss END
+            # total loss
+            total_loss = (actor_loss + self.CRITIC_LOSS_WEIGHT * critic_loss).float()
 
-            # back proporgation through actor and critic networks START
+            # gradient update
             self.actor_optimizer.zero_grad()
             self.critic_optimizer.zero_grad()
             total_loss.backward()
             self.actor_optimizer.step()
             self.critic_optimizer.step()
-            # back proporgation through actor and critic networks END
 
-            average_actor_loss += actor_loss
-            average_critic_loss += critic_loss
+            average_actor_loss += actor_loss.item()
+            average_critic_loss += critic_loss.item()
 
-        writer.add_scalar(f"actor_loss", average_actor_loss/self.EPOCH, episode)
-        writer.add_scalar(f"critic_loss", average_critic_loss/self.EPOCH, episode)
-        # refresh the memory buffer 
+        # write to tensorbroad
+        writer.add_scalar(f"actor_loss", average_actor_loss / self.EPOCH, episode)
+        writer.add_scalar(f"critic_loss", average_critic_loss / self.EPOCH, episode)
+        
+        # clear Replay Buffer
         self.replay_buffer.clear_memo()
         self.policy_hidden_state = None
         self.value_hidden_state = None
@@ -640,6 +730,9 @@ def train():
         'avg reward of each env [' + ', '.join(['%.1f' % r for r in (episode_reward)]) + ']', 
         'running_steps', NUM_STEP
         )
+
+        if episode % 100 == 0:
+            plot_training_curves(log_dir, timestamp, NUM_ENV)
     
     writer.close()
     plot_training_curves(log_dir, timestamp, NUM_ENV)

@@ -545,7 +545,7 @@ def evaluate_policy(env, agent, num_episodes=5, num_steps=200, num_env=1):
         else:
             consecutive_successes = 0
         # Store episode results
-        total_rewards.append(episode_reward/steps)
+        total_rewards.append(episode_reward)
         success_rate.append(float(success))
         episode_lengths.append(steps)
     # Restore original LSTM states
@@ -561,16 +561,16 @@ def evaluate_policy(env, agent, num_episodes=5, num_steps=200, num_env=1):
     }
 
 def train():
-    BATCH_SIZE = 60
-    NUM_EPISODES = 60
-    NUM_EVL_EPISODES = 10
-    EVAL_INTERVAL = 30
-    NUM_STEP = 2*BATCH_SIZE
+    BATCH_SIZE = 50
+    NUM_EPISODES = 2000
+    NUM_EVL_EPISODES = 100
+    EVAL_INTERVAL = 20
+    NUM_STEP = 4*BATCH_SIZE
     NUM_ENV = 6
     NUM_EVAL_ENV = 1
-    EVAL_STEP = 100
+    EVAL_STEP = 200
     
-    best_average_reward = np.ones(NUM_ENV,)*-100
+    best_average_reward = np.ones(NUM_ENV,)*-300
     best_consecutive_successes = 0
     envs = gym.vector.SyncVectorEnv([make_env("HandManipulateBlockDense-v1", max_episode_steps=NUM_STEP) for _ in range(NUM_ENV)])
     env_eval = gym.vector.SyncVectorEnv([make_env("HandManipulateBlockDense-v1", max_episode_steps=EVAL_STEP) for _ in range(NUM_EVAL_ENV)])
@@ -604,14 +604,14 @@ def train():
 
         agent.update(writer, episode)
 
-        average_reward_list.append(episode_reward/NUM_STEP)
+        average_reward_list.append(episode_reward)
         avg_reward = np.mean(np.array(average_reward_list), axis=0)
 
         for env in range(NUM_ENV):
-            writer.add_scalar(f"Episode_reward_env_{env}", episode_reward[env]/NUM_STEP, episode)
+            writer.add_scalar(f"Episode_reward_env_{env}", episode_reward[env], episode)
             writer.add_scalar(f"Average_reward_env_{env}", avg_reward[env], episode)
-            if episode_reward[env]/NUM_STEP > best_average_reward[env]:
-                best_average_reward[env] = np.mean(episode_reward[env]/NUM_STEP)
+            if episode_reward[env] > best_average_reward[env]:
+                best_average_reward[env] = np.mean(episode_reward[env])
                 model_path = os.path.join(model_dir, f'ppo_actor_for_{env}_env_best.pth')
                 agent.save_policy(model_path)
                 print(f"Best reward for env({env}) saved: {best_average_reward[env]}!")
@@ -631,13 +631,13 @@ def train():
                     agent.save_policy(model_path)
                     print(f"New best consecutive successes: {best_consecutive_successes}!")
 
-        if best_consecutive_successes >= 5:  # Adjustable threshold
+        if best_consecutive_successes >= 50:  # Adjustable threshold
                 print("\nReached target consecutive successes! Training complete.")
                 break
         
         print(
         'episode', episode, 
-        'avg reward of each env [' + ', '.join(['%.1f' % r for r in (episode_reward / NUM_STEP)]) + ']', 
+        'avg reward of each env [' + ', '.join(['%.1f' % r for r in (episode_reward)]) + ']', 
         'running_steps', NUM_STEP
         )
     

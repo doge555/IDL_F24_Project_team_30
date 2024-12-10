@@ -23,6 +23,7 @@ Implementation of PPO (Proximal Policy Optimization) and RSAC (Recurrent Soft Ac
             └── PPO_Loss.py
 
 ### Requirements
+Use setup.sh to install these packages
 Python version: 3.10 or above
 
 gymnasium
